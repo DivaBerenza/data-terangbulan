@@ -13,7 +13,7 @@ class Menstruation extends Model
      * Kolom yang bisa diisi (mass assignable)
      */
     protected $fillable = [
-        'user_id',
+        // 'user_id',
         'start_date',
         'end_date'
     ];

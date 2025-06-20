@@ -11,8 +11,7 @@ Route::get('/user', function (Request $request) {
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-// Route::get('/menstruations', [MenstruationController::class, 'index']);
-// Route::post('/menstruations', [MenstruationController::class, 'store']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/menstruations', [MenstruationController::class, 'store']);
     Route::get('/menstruations', [MenstruationController::class, 'index']);

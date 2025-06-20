@@ -3,25 +3,46 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Menstruations;
+use App\Models\Menstruation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class MenstruationController extends Controller
 {
-    public function store(Request $request)
-{
-    $validated = $request->validate([
-        'start_date' => 'required|date',
-        'end_date' => 'required|date|after_or_equal:start_date',
-    ]);
+        public function store(Request $request)
+    {
+        try {
+            Log::info('Received menstruation data:', $request->all());
 
-    $history = $request->user()->menstruations()->create($validated);
+            $validated = $request->validate([
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after_or_equal:start_date',
+            ]);
 
-    return response()->json([
-        'message' => 'Data saved successfully',
-        'data' => $history
-    ], 201);
-}
+            Log::info('User ID:', ['id' => $request->user()->id]);
+            
+            $menstruation = $request->user()->menstruations()->create($validated);
+
+            Log::info('Menstruation created:', $menstruation->toArray());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data saved successfully',
+                'data' => $menstruation
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Error saving menstruation:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
 public function index(Request $request)
 {

@@ -6,48 +6,86 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use App\Models\Menstruation;
 
 class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
+                'password' => 'required|string|min:8',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+            ]);
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registration successful',
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'user' => $user
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed: ' . $e->getMessage()
+            ], 500);
         }
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json(['access_token' => $token, 'token_type' => 'Bearer', ]);
     }
 
     public function login(Request $request)
-{
-    $credentials = $request->only('email', 'password');
+    {
+        try {
+            $credentials = $request->validate([
+                'email' => 'required|email',
+                'password' => 'required'
+            ]);
 
-    if (Auth::attempt($credentials)) {
-        $user = Auth::user();
+            if (Auth::attempt($credentials)) {
+                $user = Auth::user();
+                $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'message' => 'Login successful',
-            'user' => $user,
-        ]);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Login successful',
+                    'user' => $user,
+                    'access_token' => $token,
+                    'token_type' => 'Bearer'
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid credentials'
+            ], 401);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
-
-    return response()->json(['message' => 'Unauthorized'], 401);
-}
 
 }
