@@ -15,4 +15,5 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/menstruations', [MenstruationController::class, 'store']);
     Route::get('/menstruations', [MenstruationController::class, 'index']);
+    Route::put('/user', [AuthController::class, 'updateProfile']);
 });
